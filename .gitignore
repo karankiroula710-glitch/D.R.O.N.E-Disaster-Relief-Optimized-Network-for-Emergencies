@@ -2,3 +2,6 @@
 Thumbs.db
 *.log
 .vscode/
+/build/
+*.o
+drone-demo.exe

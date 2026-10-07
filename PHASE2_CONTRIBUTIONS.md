@@ -1,32 +1,44 @@
 # Phase 2 contribution split
 
-**Target:** Phase 2 represents 40% of the complete PBL project. The four work packages below divide that target into four 10-percentage-point slices.
+**Target:** Phase 2 represents 40% of the complete PBL project. This plan divides that target into four 10-percentage-point work packages.
 
-> The percentages are a fair work-allocation plan, not a line-count measurement or proof of authorship. The current prototype is shared starter code. Each person should personally review and extend their assigned area, understand it well enough to explain it, and make their own GitHub commit before claiming that work as an individual contribution. Adjust these shares to match the course rubric and the work actually completed.
+> These percentages are a proposed allocation, not a line-count measurement, certification by the mentor, or proof that the named person has already completed the work. The shared starter code and the team-labeled baseline commit do not establish four individual contributions. Each person should make a meaningful change in their assigned area, understand and explain it, and commit it to GitHub while signed into their own account. Match the final record to the rubric and work actually completed.
 
 ## Owners and code areas
 
-| Member | Planned share | Own this part | Code locations | Individual deliverable |
+| Member | Planned share | Work package | Code locations | A concrete individual contribution to make |
 | --- | ---: | --- | --- | --- |
-| **Lakshita Gusain** (team lead) | 10% | Request intake and request lifecycle | `index.html` request dialog; `app.js`: `openRequestDialog`, `closeRequestDialog`, `submitRequest`, `saveState`, `resetDemo` | Improve the intake flow or validation; show a new report being stored and its assigned/queued result. |
-| **Prerna Shukla** | 10% | Priority scheduling and team lifecycle | `app.js`: `PriorityQueue`, `processQueue`, `getQueue`, `resolveRequest`, `changeTeamStatus` | Extend or document urgency and tie-breaking behavior; demonstrate a released team picking up the highest-priority matching request. |
-| **Karan Singh Kiroula** | 10% | Zone graph and shortest-route calculation | `app.js`: `ZONES`, `EDGES`, `shortestPaths`, `pathTo`, `nearestTeam`, `renderMap`, `renderRoutePanel`, `renderZoneTable` | Extend a zone or route detail; explain how the shortest path and nearest suitable team are selected. |
-| **Manishka Bisht** | 10% | Dashboard, request/team views, and local query assistant | `app.js`: `renderMetrics`, `renderRequests`, `renderTeams`, `renderActivity`, `assistantAnswer`, `askQuestion`, `submitGlobalSearch` | Add a useful dashboard/query improvement; demonstrate filtering a report or answering a question from the current scenario. |
+| **Lakshita Gusain** (team lead) | 10% | Request modeling and intake | `core/cpp/include/dispatch_manager.hpp`: `Request`; `core/cpp/src/dispatch_manager.cpp`: `Request` methods, `submitRequest`, `findRequest`; `index.html` request dialog | Add validation (for example, reject blank descriptions or invalid IDs), then demonstrate a valid request being indexed and submitted. |
+| **Prerna Shukla** | 10% | Scheduling and request lifecycle | `core/c/drone_structures.c`: priority heap and circular pending queue; `core/cpp/src/dispatch_manager.cpp`: `retryWaitingRequests`, `processPriorityQueue`, `resolveRequest` | Improve or document tie-breaking and retry behavior; demonstrate a freed matching team taking the highest-priority waiting request. |
+| **Karan Singh Kiroula** | 10% | Zone network and shortest-route selection | `core/c/drone_structures.c`: graph and Dijkstra; `core/cpp/src/dispatch_manager.cpp`: `Zone`, `connectZones`, `nearestAvailableTeam`, `routeDescription` | Add a zone/link or route detail, then explain how the shortest path and nearest suitable team are chosen. |
+| **Manishka Bisht** | 10% | Team OOP hierarchy and presentation views | `core/cpp/include/dispatch_manager.hpp`: `VolunteerTeam` subclasses; `core/cpp/src/dispatch_manager.cpp`: team implementations and dashboard; `core/cpp/src/main.cpp`; `app.js` dashboard/query | Extend one team's response description or improve a dashboard/query view, then demonstrate the resulting behavior. |
 
-## Suggested GitHub workflow
+The C source file currently contains several data structures in one module, so Prerna and Karan should coordinate before editing that shared file. They can make separate commits for distinct changes, or split the implementation into smaller `.c` modules as part of their contribution.
 
-1. Give each member their own branch: `phase2/lakshita-intake`, `phase2/prerna-dispatch`, `phase2/karan-routing`, or `phase2/manishka-dashboard`.
-2. Each person makes a focused change in their assigned area and commits it from their own GitHub account. For example: `Improve request form validation`.
-3. Review the changes together and merge the four contributions into the presentation branch.
-4. In the presentation, describe the code each person actually changed, explain one design decision, and run that person's demonstration flow.
+## Individual GitHub records
 
-The code is currently integrated in `app.js` so the browser prototype can run as a single local page. The named function groups above are the handoff boundaries for Phase 2; they are not Git authorship labels. If the team later splits the JavaScript into separate modules, preserve these ownership boundaries and update this file.
+The repository currently has a shared baseline commit credited to the project team. That is a team record; it does not create a contribution entry for each member. To show individual work:
+
+1. Confirm each member has accepted access to the repository using their own GitHub account.
+2. Each member signs into GitHub with their account and clones the repository or uses GitHub Desktop.
+3. Each person edits their assigned area, runs the build, and commits their own changes with their account configured as the Git author.
+4. Push each member's branch and open a pull request, or commit directly to the presentation branch if the team agrees.
+5. Keep the pull request or commit links and a short explanation of the code each person changed for the mentor.
+
+Do not share passwords or GitHub tokens. A team member should make and explain their own contribution; changing only commit author metadata does not make someone the author of work they did not do.
+
+## Suggested commit and presentation plan
+
+1. Use focused branches such as `phase2/lakshita-intake`, `phase2/prerna-dispatch`, `phase2/karan-routing`, and `phase2/manishka-teams-ui`.
+2. Make one or more focused commits per person, for example `Validate request intake` or `Document priority queue tie-breaking`.
+3. Review the four changes together and merge them into the presentation branch.
+4. In the presentation, show each person's actual code change, one design decision, and a short demonstration.
 
 ## Presentation prompts
 
-- **Lakshita:** “I own the report intake flow. I can show how a submitted request is checked, stored in this browser, and sent to the dispatch flow.”
-- **Prerna:** “I own urgency ordering and team availability. I can show why a Critical request goes ahead of a High request and how a freed matching team takes the next one.”
-- **Karan:** “I own the zone network and route selection. I can trace a shortest route through the weighted links and explain why the nearest suitable team is chosen.”
-- **Manishka:** “I own the command views and local query assistant. I can filter the current requests and show how a question is answered from the scenario data.”
+- **Lakshita:** “I worked on request modeling and intake. I can show the validation and how a request is indexed and submitted.”
+- **Prerna:** “I worked on urgency ordering and team availability. I can show how the highest-priority waiting request is assigned when a team is released.”
+- **Karan:** “I worked on the zone graph and route selection. I can trace the weighted shortest path and explain how the nearest suitable team is chosen.”
+- **Manishka:** “I worked on the volunteer team classes and presentation views. I can explain inheritance and demonstrate a team-specific response.”
 
-Use these as prompts only after each member has made or reviewed the corresponding contribution and can explain it in their own words.
+Use these prompts only after each member has personally completed or reviewed the corresponding contribution and can explain it in their own words.
