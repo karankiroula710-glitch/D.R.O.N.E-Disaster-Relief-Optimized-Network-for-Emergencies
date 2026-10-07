@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101d24">
+  <meta name="description" content="D.R.O.N.E. is a disaster relief dispatch simulator for prioritizing requests and coordinating response teams.">
+  <title>D.R.O.N.E. | Response command</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Main navigation">
+      <a class="brand" href="#overview" aria-label="D.R.O.N.E. home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 40 40" fill="none"><path d="M20 4 34 12v16l-14 8L6 28V12L20 4Z" stroke="currentColor" stroke-width="2.4"/><path d="m12 23 8-13 8 13h-5l-3-5-3 5h-5Zm3 4h10" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        <span class="brand-copy"><strong>D.R.O.N.E.</strong><small>RESQNET DISPATCH</small></span>
+      </a>
+
+      <div class="nav-label">WORKSPACE</div>
+      <nav class="primary-nav">
+        <button class="nav-item active" data-view="overview" type="button"><span class="nav-icon">◫</span><span>Command center</span></button>
+        <button class="nav-item" data-view="requests" type="button"><span class="nav-icon">≋</span><span>Requests</span><span class="nav-count" id="navRequestCount">0</span></button>
+        <button class="nav-item" data-view="teams" type="button"><span class="nav-icon">◇</span><span>Response teams</span></button>
+        <button class="nav-item" data-view="network" type="button"><span class="nav-icon">⌖</span><span>Zone network</span></button>
+      </nav>
+
+      <div class="sidebar-spacer"></div>
+      <div class="sidebar-status">
+        <div class="status-head"><span class="pulse-dot"></span><span>Simulation online</span><span class="status-menu">•••</span></div>
+        <p>Local dispatch environment<br>All times shown in your browser</p>
+        <button id="resetDemoBtn" class="reset-link" type="button">↻ &nbsp;Reset demo data</button>
+      </div>
+      <div class="sidebar-user">
+        <div class="avatar">RQ</div>
+        <div class="user-copy"><strong>Resqnet</strong><small>Project workspace</small></div>
+        <span class="user-more">···</span>
+      </div>
+      <div class="sidebar-foot">D.R.O.N.E. <span>v1.0 · PBL PROTOTYPE</span></div>
+    </aside>
+
+    <main class="main-shell">
+      <header class="topbar">
+        <div class="mobile-brand"><span class="brand-mark small-mark">D</span><strong>D.R.O.N.E.</strong></div>
+        <label class="search-box" for="globalSearch">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.3 4.3"/></svg>
+          <input id="globalSearch" type="search" placeholder="Search requests, zones or teams…" autocomplete="off">
+          <kbd>↵</kbd>
+        </label>
+        <div class="topbar-right">
+          <div class="clock-box"><span class="pulse-dot"></span><span id="clockText">--:--</span></div>
+          <button class="icon-button query-launch" id="queryOpenBtn" type="button" aria-label="Ask dispatch assistant" title="Ask dispatch">✳</button>
+          <button class="avatar top-avatar" type="button" title="Resqnet project workspace">RQ</button>
+          <button class="button button-primary top-new" id="newRequestBtn" type="button"><span>＋</span> New request</button>
+          <button class="button button-primary mobile-new" id="mobileNewRequestBtn" type="button" aria-label="New request">＋</button>
+        </div>
+      </header>
+
+      <div class="view-container">
+        <section class="page-view active" id="view-overview" aria-labelledby="overviewTitle">
+          <div class="page-heading">
+            <div><div class="eyebrow"><span class="pulse-dot"></span> RESPONSE OPERATIONS <span class="eyebrow-sep">/</span> <span id="dateLabel">TODAY</span></div>
+              <h1 id="overviewTitle">Command center</h1>
+              <p>Coordinate relief, one request at a time.</p>
+            </div>
+            <div class="heading-actions"><span class="simulation-pill"><span class="pulse-dot"></span> Simulation active</span></div>
+          </div>
+
+          <div class="metrics-grid" id="metricGrid"></div>
+
+          <div class="overview-grid">
+            <section class="panel map-panel">
+              <div class="panel-heading">
+                <div><div class="panel-kicker">LIVE ZONE NETWORK</div><h2>Response map</h2></div>
+                <button class="text-button" data-goto="network" type="button">Open network <span>↗</span></button>
+              </div>
+              <div class="map-key"><span><i class="key-line"></i>Response route</span><span><i class="key-dot key-alert"></i>Active incident</span><span><i class="key-dot key-base"></i>Team base</span></div>
+              <div class="map-wrap" id="networkMap"></div>
+              <div class="map-footer"><span><b class="legend-count" id="mapIncidentCount">0</b> open incidents across <b id="zoneCount">0</b> zones</span><span class="map-hint">Select a zone to prefill a request</span></div>
+            </section>
+
+            <section class="panel queue-panel">
+              <div class="panel-heading">
+                <div><div class="panel-kicker">NEEDS A TEAM</div><h2>Priority queue <span class="heading-count" id="queueCount">0</span></h2></div>
+                <button class="more-button" id="queueInfoBtn" type="button" aria-label="About the priority queue">···</button>
+              </div>
+              <p class="panel-subtitle">Urgent requests wait here until a suitable team is free.</p>
+              <div id="queueList" class="queue-list"></div>
+              <div class="queue-bottom"><span><span class="queue-indicator"></span>Sorted by urgency, then time received</span><button class="text-button" data-goto="requests" type="button">All requests <span>→</span></button></div>
+            </section>
+          </div>
+
+          <div class="lower-grid">
+            <section class="panel teams-preview-panel">
+              <div class="panel-heading"><div><div class="panel-kicker">FIELD UNITS</div><h2>Response teams</h2></div><button class="text-button" data-goto="teams" type="button">View teams <span>→</span></button></div>
+              <div class="team-strip" id="teamStrip"></div>
+            </section>
+            <section class="panel activity-panel">
+              <div class="panel-heading"><div><div class="panel-kicker">DISPATCH LOG</div><h2>Recent activity</h2></div><span class="activity-live"><span class="pulse-dot"></span> LIVE</span></div>
+              <div class="activity-list" id="activityList"></div>
+            </section>
+          </div>
+          <footer class="page-foot"><span>D.R.O.N.E. dispatch engine · Browser simulation</span><span>Distances are illustrative · No live emergency service</span></footer>
+        </section>
+
+        <section class="page-view" id="view-requests" aria-labelledby="requestsTitle">
+          <div class="page-heading"><div><div class="eyebrow">RESPONSE OPERATIONS <span class="eyebrow-sep">/</span> INTAKE</div><h1 id="requestsTitle">Emergency requests</h1><p>Review incoming incidents and follow each request through dispatch.</p></div><button class="button button-primary" data-open-request type="button"><span>＋</span> New request</button></div>
+          <div class="request-summary" id="requestSummary"></div>
+          <div class="panel requests-panel">
+            <div class="list-toolbar"><div class="filter-group" id="requestFilters"><button class="filter-chip selected" data-filter="all" type="button">All <span id="filterAllCount">0</span></button><button class="filter-chip" data-filter="queued" type="button">Waiting <span id="filterQueuedCount">0</span></button><button class="filter-chip" data-filter="dispatched" type="button">Dispatched <span id="filterDispatchedCount">0</span></button><button class="filter-chip" data-filter="resolved" type="button">Resolved <span id="filterResolvedCount">0</span></button></div><div class="list-search"><span>⌕</span><input id="requestSearch" type="search" placeholder="Filter this list"></div></div>
+            <div id="requestList" class="request-list"></div>
+          </div>
+        </section>
+
+        <section class="page-view" id="view-teams" aria-labelledby="teamsTitle">
+          <div class="page-heading"><div><div class="eyebrow">RESPONSE OPERATIONS <span class="eyebrow-sep">/</span> PERSONNEL</div><h1 id="teamsTitle">Response teams</h1><p>See team specialties and availability. Resolve a dispatch to release its team.</p></div><div class="heading-actions"><span class="simulation-pill"><span class="pulse-dot"></span> Team status is simulated</span></div></div>
+          <div id="teamSummary" class="request-summary"></div>
+          <div class="team-groups" id="teamGroups"></div>
+          <div class="info-banner"><span class="info-icon">i</span><span>Teams are matched to the same request type. When all suitable teams are busy, new requests stay in the priority queue until a team is released.</span></div>
+        </section>
+
+        <section class="page-view" id="view-network" aria-labelledby="networkTitle">
+          <div class="page-heading"><div><div class="eyebrow">RESPONSE OPERATIONS <span class="eyebrow-sep">/</span> ROUTING</div><h1 id="networkTitle">Zone network</h1><p>Click a zone to preview a request location. Routes use the shortest-path network.</p></div><button class="button button-primary" data-open-request type="button"><span>＋</span> New request</button></div>
+          <div class="network-layout">
+            <section class="panel network-map-panel"><div class="panel-heading"><div><div class="panel-kicker">DISTANCE GRAPH · KM</div><h2>Connected response zones</h2></div><span class="route-badge"><i class="key-line"></i>Route preview</span></div><div class="network-map-wrap" id="largeNetworkMap"></div><div class="network-legend"><span><i class="key-dot key-alert"></i>Open incident</span><span><i class="key-dot key-base"></i>Team stationed</span><span><i class="key-dot key-free"></i>Available team</span></div></section>
+            <aside class="panel route-panel"><div class="panel-kicker">ROUTE PREVIEW</div><h2 id="routeZoneTitle">Select a zone</h2><p class="route-intro" id="routeIntro">Choose any zone on the map to view its nearest suitable response unit.</p><div id="routeDetails"></div><button class="button button-outline full-button" id="requestFromZoneBtn" type="button">＋ Create request for this zone</button></aside>
+          </div>
+          <section class="panel zone-list-panel"><div class="panel-heading"><div><div class="panel-kicker">COVERAGE</div><h2>Zone overview</h2></div><span class="muted-caption">Click a row to select</span></div><div class="zone-table" id="zoneTable"></div></section>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="requestModal" hidden>
+    <section class="request-dialog" role="dialog" aria-modal="true" aria-labelledby="requestModalTitle">
+      <div class="dialog-top"><div><div class="panel-kicker">NEW INTAKE</div><h2 id="requestModalTitle">Report an emergency</h2><p>Share what is needed. D.R.O.N.E. will prioritize and route the request.</p></div><button class="icon-button close-dialog" data-close-request type="button" aria-label="Close">×</button></div>
+      <form id="requestForm">
+        <div class="form-grid">
+          <label class="form-field"><span>Request type <b>*</b></span><select name="type" required><option value="Medical">Medical aid</option><option value="Rescue">Rescue operation</option><option value="Supply">Food &amp; water supplies</option></select></label>
+          <label class="form-field"><span>Urgency <b>*</b></span><select name="severity" required><option value="Critical">Critical · immediate danger</option><option value="High">High · urgent</option><option value="Medium" selected>Medium · needs assistance</option><option value="Low">Low · non-urgent</option></select></label>
+          <label class="form-field"><span>Affected zone <b>*</b></span><select name="zone" id="zoneSelect" required></select></label>
+          <label class="form-field"><span>Reported by</span><input name="reporter" maxlength="40" placeholder="Name or organization (optional)"></label>
+          <label class="form-field full-field"><span>What is needed? <b>*</b></span><textarea name="description" rows="3" maxlength="240" placeholder="Describe the situation and support needed…" required></textarea><small>Keep personal details out of this classroom simulation.</small></label>
+        </div>
+        <div class="form-note"><span>◎</span><span>Your report is saved in this browser. The nearest available team with the right specialty will be assigned automatically.</span></div>
+        <div class="dialog-actions"><button class="button button-quiet" data-close-request type="button">Cancel</button><button class="button button-primary" type="submit">Submit request <span>→</span></button></div>
+      </form>
+    </section>
+  </div>
+
+  <div class="drawer-scrim" id="drawerScrim" hidden></div>
+  <aside class="query-drawer" id="queryDrawer" aria-label="Dispatch assistant" aria-hidden="true">
+    <div class="drawer-header"><div class="assistant-mark">✳</div><div><strong>Ask dispatch</strong><small>LOCAL PROJECT ASSISTANT</small></div><button class="icon-button" id="queryCloseBtn" type="button" aria-label="Close assistant">×</button></div>
+    <div class="assistant-context"><span class="pulse-dot"></span> Answers from this simulation's current data</div>
+    <div class="chat-messages" id="chatMessages" aria-live="polite"></div>
+    <div class="suggestion-row"><button type="button" data-query="Which requests are waiting?">Waiting requests</button><button type="button" data-query="Which teams are available?">Available teams</button><button type="button" data-query="How are requests prioritized?">How it works</button></div>
+    <form class="chat-form" id="queryForm"><input id="queryInput" type="text" placeholder="Ask about requests, teams or routes…" maxlength="180" autocomplete="off" aria-label="Ask dispatch a question"><button type="submit" aria-label="Send question">↑</button></form>
+    <p class="assistant-disclaimer">Project demonstration only · Not connected to emergency services</p>
+  </aside>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
