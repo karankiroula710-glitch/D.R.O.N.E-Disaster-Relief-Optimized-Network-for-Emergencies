@@ -1,7 +1,0 @@
-.DS_Store
-Thumbs.db
-*.log
-.vscode/
-/build/
-*.o
-drone-demo.exe
