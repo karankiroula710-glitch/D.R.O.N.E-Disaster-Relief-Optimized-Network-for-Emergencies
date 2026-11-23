@@ -1,0 +1,4 @@
+/build/
+/shots/
+*.o
+*.exe

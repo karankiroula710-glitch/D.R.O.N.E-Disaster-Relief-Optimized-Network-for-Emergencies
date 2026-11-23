@@ -14,10 +14,18 @@ DispatchManager::DispatchManager() : nextRequestId_(1001), nextArrivalOrder_(1) 
     drone_id_map_init(&idIndex_);
     drone_history_init(&history_);
 
-    // Fictional teams and locations for a repeatable classroom demonstration.
-    teams_.push_back(std::make_unique<MedicalTeam>(11, "M-01", 3));
-    teams_.push_back(std::make_unique<RescueTeam>(21, "R-01", 4));
-    teams_.push_back(std::make_unique<SupplyTeam>(31, "S-01", 5));
+    // Thirty fictional teams use example bases distributed across the demo map.
+    static const int medicalBases[] = {1, 0, 4, 9, 13, 15, 17, 20, 24, 26};
+    static const int rescueBases[]  = {5, 10, 12, 14, 16, 18, 19, 21, 23, 27};
+    static const int supplyBases[]  = {6, 2, 3, 7, 8, 11, 18, 22, 25, 27};
+    for (int i = 0; i < 10; ++i) {
+        const int serial = i + 1;
+        const std::string suffix = serial < 10 ? "0" + std::to_string(serial)
+                                                : std::to_string(serial);
+        teams_.push_back(std::make_unique<MedicalTeam>(100 + serial, "M-" + suffix, medicalBases[i]));
+        teams_.push_back(std::make_unique<RescueTeam>(200 + serial, "R-" + suffix, rescueBases[i]));
+        teams_.push_back(std::make_unique<SupplyTeam>(300 + serial, "S-" + suffix, supplyBases[i]));
+    }
 }
 
 DispatchManager::~DispatchManager() { drone_history_clear(&history_); }
@@ -27,6 +35,36 @@ int DispatchManager::zoneCount() const { return static_cast<int>(graph_.zone_cou
 std::string DispatchManager::zoneName(int zoneId) const {
     if (zoneId < 0 || static_cast<size_t>(zoneId) >= graph_.zone_count) return "Unknown zone";
     return graph_.names[zoneId];
+}
+
+int DispatchManager::addZone(const std::string& name, int connectedZoneId, int distance) {
+    size_t first = name.find_first_not_of(" \t\r\n");
+    size_t last = name.find_last_not_of(" \t\r\n");
+    if (first == std::string::npos || connectedZoneId < 0 ||
+        static_cast<size_t>(connectedZoneId) >= graph_.zone_count || distance <= 0)
+        return -1;
+
+    const std::string cleanName = name.substr(first, last - first + 1);
+    if (cleanName.size() >= DRONE_ZONE_NAME) return -1;
+    std::string normalizedName = cleanName;
+    std::transform(normalizedName.begin(), normalizedName.end(), normalizedName.begin(),
+                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    for (size_t i = 0; i < graph_.zone_count; ++i) {
+        std::string existing = graph_.names[i];
+        std::transform(existing.begin(), existing.end(), existing.begin(),
+                       [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+        if (existing == normalizedName) return -1;
+    }
+
+    const int newZoneId = drone_graph_add_zone(&graph_, cleanName.c_str());
+    if (newZoneId < 0 || !drone_graph_add_road(&graph_, newZoneId, connectedZoneId, distance))
+        return -1;
+
+    std::ostringstream event;
+    event << "Added demo place " << cleanName << " connected to "
+          << zoneName(connectedZoneId) << " (" << distance << " demo distance units).";
+    recordEvent(event.str());
+    return newZoneId;
 }
 
 int DispatchManager::submitReport(RequestType type, Severity severity, int zoneId,
@@ -193,9 +231,31 @@ VolunteerTeam* DispatchManager::findTeam(int teamId) {
 
 void DispatchManager::printDashboard() const {
     size_t inboxCount = drone_heap_size(&inbox_);
+    size_t medicalTotal = 0, medicalAvailable = 0;
+    size_t rescueTotal = 0, rescueAvailable = 0;
+    size_t supplyTotal = 0, supplyAvailable = 0;
+    for (const auto& team : teams_) {
+        switch (team->specialty()) {
+            case RequestType::Medical:
+                ++medicalTotal;
+                if (team->isAvailable()) ++medicalAvailable;
+                break;
+            case RequestType::Rescue:
+                ++rescueTotal;
+                if (team->isAvailable()) ++rescueAvailable;
+                break;
+            case RequestType::Supply:
+                ++supplyTotal;
+                if (team->isAvailable()) ++supplyAvailable;
+                break;
+        }
+    }
     std::cout << "\n=== Offline dispatch dashboard ===\n"
               << "Reports: " << requests_.size() << " | Intake inbox: " << inboxCount
               << " | Waiting for a team: " << drone_queue_size(&pending_) << "\n";
+    std::cout << "Available teams: Medical " << medicalAvailable << '/' << medicalTotal
+              << " | Rescue " << rescueAvailable << '/' << rescueTotal
+              << " | Supply " << supplyAvailable << '/' << supplyTotal << "\n";
     for (const auto& team : teams_)
         std::cout << team->name() << " | " << team->responseLabel() << " | at "
                   << zoneName(team->zoneId()) << " | "
@@ -204,9 +264,9 @@ void DispatchManager::printDashboard() const {
 }
 
 void DispatchManager::printZones() const {
-    std::cout << "\n=== Sample zones (IDs are menu numbers + 1) ===\n";
+    std::cout << "\n=== Dehradun demo places (IDs are menu numbers + 1) ===\n";
     for (size_t i = 0; i < graph_.zone_count; ++i) std::cout << (i + 1) << ". " << graph_.names[i] << '\n';
-    std::cout << "Road weights are fictional demo distance units.\n";
+    std::cout << "Place names are examples; map links and weights are demo data, not verified roads.\n";
 }
 
 void DispatchManager::printRequestDetails(const Request& request) const {
@@ -262,7 +322,8 @@ void DispatchManager::answerQuery(const std::string& query) const {
         std::cout << "The intake max-heap processes Critical, High, Medium, then Low reports."
                      " Earlier reports are processed first when severity is equal.\n";
     } else if (normalized.find("route") != std::string::npos || normalized.find("network") != std::string::npos) {
-        std::cout << "Routes use Dijkstra on the predefined zone graph. They do not reflect live roads or hazards.\n";
+        std::cout << "Routes use Dijkstra on the Dehradun demo graph and places added during this session.\n"
+                     "Demo links and distances do not reflect verified roads, traffic, or hazards.\n";
     } else {
         std::cout << "Try: request 1001 | what is waiting? | available teams | how is priority decided? | route rules\n";
     }

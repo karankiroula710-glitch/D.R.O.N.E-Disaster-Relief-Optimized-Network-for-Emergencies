@@ -17,6 +17,7 @@ public:
 
     int zoneCount() const;
     std::string zoneName(int zoneId) const;
+    int addZone(const std::string& name, int connectedZoneId, int distance);
     int submitReport(RequestType type, Severity severity, int zoneId,
                      const std::string& source, const std::string& description);
     void processInbox();

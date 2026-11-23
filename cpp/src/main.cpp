@@ -31,12 +31,33 @@ bool readText(const std::string& prompt, std::string& out) {
     return true;
 }
 
+int addZoneFromInput(DispatchManager& manager) {
+    std::string name;
+    int connectedZone = 0;
+    int distance = 0;
+    if (!readText("New Dehradun place name: ", name)) return -1;
+    manager.printZones();
+    if (!readNumber("Connect it to which existing place number? ", 1, manager.zoneCount(), connectedZone)) return -1;
+    if (!readNumber("Demo distance units for this link (1-10000): ", 1, 10000, distance)) return -1;
+    const int zoneId = manager.addZone(name, connectedZone - 1, distance);
+    if (zoneId < 0) {
+        std::cout << "Could not add that place. Check that its name is new and shorter than 64 characters.\n";
+        return -1;
+    }
+    std::cout << "Added " << manager.zoneName(zoneId) << " as place number " << zoneId + 1
+              << ". It can now be selected for reports in this session.\n";
+    return zoneId;
+}
+
 bool intakeReport(DispatchManager& manager) {
     int typeChoice = 0, severityChoice = 0, zoneChoice = 0, sourceChoice = 0;
     if (!readNumber("Type: 1 Medical, 2 Rescue, 3 Supply: ", 1, 3, typeChoice)) return false;
     if (!readNumber("Severity: 1 Low, 2 Medium, 3 High, 4 Critical: ", 1, 4, severityChoice)) return false;
     manager.printZones();
-    if (!readNumber("Reported zone number: ", 1, manager.zoneCount(), zoneChoice)) return false;
+    std::cout << "Enter 0 to add a new Dehradun place now.\n";
+    if (!readNumber("Reported place number: ", 0, manager.zoneCount(), zoneChoice)) return false;
+    int zoneId = zoneChoice == 0 ? addZoneFromInput(manager) : zoneChoice - 1;
+    if (zoneId < 0) return false;
     std::cout << "Report source: 1 shelter desk, 2 checkpoint, 3 runner, 4 radio relay entered by operator.\n";
     if (!readNumber("Source: ", 1, 4, sourceChoice)) return false;
     std::string source;
@@ -50,7 +71,7 @@ bool intakeReport(DispatchManager& manager) {
     if (!readText("Short fictional report (no real names or contact details): ", description)) return false;
     RequestType type = static_cast<RequestType>(typeChoice);
     Severity severity = static_cast<Severity>(severityChoice);
-    return manager.submitReport(type, severity, zoneChoice - 1, source, description) >= 0;
+    return manager.submitReport(type, severity, zoneId, source, description) >= 0;
 }
 }
 
@@ -62,9 +83,9 @@ int main() {
     while (true) {
         std::cout << "\n1 Dashboard\n2 Enter a relayed report\n3 Process intake by priority\n"
                      "4 Show reports and waiting list\n5 Resolve assigned report\n6 Ask a local query\n"
-                     "7 Dispatch history\n8 Show sample zones\n0 Exit\n";
+                     "7 Dispatch history\n8 Show Dehradun demo places\n9 Add a Dehradun place\n0 Exit\n";
         int choice = 0;
-        if (!readNumber("Choose: ", 0, 8, choice)) break;
+        if (!readNumber("Choose: ", 0, 9, choice)) break;
         if (choice == 0) break;
         switch (choice) {
             case 1: manager.printDashboard(); break;
@@ -83,6 +104,7 @@ int main() {
             }
             case 7: manager.printHistory(); break;
             case 8: manager.printZones(); break;
+            case 9: (void)addZoneFromInput(manager); break;
         }
     }
     std::cout << "Session ended. In-memory reports and history will be cleared.\n";
