@@ -52,6 +52,8 @@ std::string toString(Severity severity) {
         case Severity::Medium: return "Medium";
         case Severity::High: return "High";
         case Severity::Critical: return "Critical";
+        case Severity::Other: return "Other";
+
     }
     return "Unknown";
 }
